@@ -45,10 +45,14 @@ namespace TwitterMonitor
 
 			var p = new Personalization
 			{
-				Tos = new List<EmailAddress> { 
-				new EmailAddress(Environment.GetEnvironmentVariable("PrimaryEmail", EnvironmentVariableTarget.Process)), 
-				new EmailAddress(Environment.GetEnvironmentVariable("SecondaryEmail", EnvironmentVariableTarget.Process)) }
+				Tos = new List<EmailAddress> 
+				{
+					new EmailAddress(Environment.GetEnvironmentVariable("PrimaryEmail", EnvironmentVariableTarget.Process))
+				}
 			};
+			var secondaryEmail = Environment.GetEnvironmentVariable("SecondaryEmail", EnvironmentVariableTarget.Process);
+			if (!string.IsNullOrEmpty(secondaryEmail))
+				p.Tos.Add(new EmailAddress(secondaryEmail));
 
 			// april 4 2018 (so that we're not asking for beginning of all time)
 			var previousTweetSinceId = 981588894067118080UL; 
