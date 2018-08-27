@@ -18,7 +18,7 @@ namespace TwitterMonitor
 	public static class TwitterMonitor
 	{
 		[FunctionName("TwitterMonitor")]
-		// For testing every second, can use "0 */1 * * * *"
+		// For testing every minute, can use "0 */1 * * * *"
 		// Normally every 5 minutes
 		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Read)] Stream stateIn, 
@@ -93,7 +93,7 @@ namespace TwitterMonitor
 						updatedSinceId = tweetId;
 						
 					// TODO: format the email body nicer than this!
-					msgText = "\n" + txt;
+					msgText += Environment.NewLine + txt;
 				 	
 				});
 			}
