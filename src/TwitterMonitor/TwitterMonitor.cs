@@ -21,7 +21,8 @@ namespace TwitterMonitor
 		// For testing every minute, can use "0 */1 * * * *"
 		// Normally every 5 minutes
 		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
-			[Blob("twitterjob1/twittercheckpoint", FileAccess.ReadWrite)] Stream stateBlob,  
+			[Blob("twitterjob1/%BlobFileName%", FileAccess.Read)] Stream stateIn,   
+			[Blob("twitterjob1/%BlobFileName%", FileAccess.Write)] TextWriter stateOut, 
 			TraceWriter log, 
 			CancellationToken cancellationToken = default(CancellationToken) 
 			//, [SendGrid] out Mail message <-- this doesn't seem to work properly with current nuget version, so do it manually!!!
@@ -56,9 +57,9 @@ namespace TwitterMonitor
 			// april 4 2018 (so that we're not asking for beginning of all time)
 			var previousTweetSinceId = 981588894067118080UL; 
 			
-			if (stateBlob != null)
+			if (stateIn != null)
 			{
-				using (var reader = new StreamReader(stateBlob, Encoding.UTF8))
+				using (var reader = new StreamReader(stateIn, Encoding.UTF8))
 				{
 					if (!ulong.TryParse(await reader.ReadToEndAsync(), out previousTweetSinceId))
 						throw new Exception("must parse");
@@ -123,27 +124,19 @@ namespace TwitterMonitor
 			
 			
 			// write state out and send notifications (latest sinceid)
-			if (stateBlob != null && newTweetsCount > 0)
+			if (newTweetsCount > 0)
 			{
 				log.Info($"About to attempt to send message: {message}");
 			
 				message.AddContent("text/plain", msgText);
 				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
-				
+
 				if (resp.StatusCode != HttpStatusCode.Accepted)
 					log.Error($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
-				
-				using (var writer = new StreamWriter(stateBlob, Encoding.UTF8))
-				{
-					var updatedState = updatedSinceId.ToString();
-					await writer.WriteLineAsync(updatedState);
-					log.Info($"Wrote state (id of {updatedState}) out to azure storage.");
-				}
-
-				await stateBlob.FlushAsync();
 			}
-			else if (stateBlob == null)
-				log.Error("Could not load output state container in azure storage.");
+			
+			var updatedState = updatedSinceId.ToString();
+			await stateOut.WriteLineAsync( updatedState);
                 
 		}
 	}
