@@ -81,9 +81,11 @@ namespace TwitterMonitor
 			};
 
 			var msgText = "";
-			var updatedSinceId = 0UL;
+			var updatedSinceId = previousTweetSinceId;
+			var statusCount = 0;
 			if (searchResponse != null && searchResponse.Statuses != null)
 			{
+				statusCount = searchResponse.Statuses.Count;
 				searchResponse.Statuses.ForEach(tweet =>
 				{
 					var txt = tweet.Text;
@@ -99,7 +101,7 @@ namespace TwitterMonitor
 						}
 					}
 					
-					if (tweetId > previousTweetSinceId)
+					if (tweetId > updatedSinceId)
 						updatedSinceId = tweetId;
 						
 					// TODO: format the email body nicer than this!
@@ -109,7 +111,7 @@ namespace TwitterMonitor
 			}
 			
 			// write state out and send notifications (latest sinceid)
-			if (stateOut != null && updatedSinceId > 0UL)
+			if (stateOut != null && statusCount > 0)
 			{
 				message.AddContent("text/plain", msgText);
 				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
