@@ -115,7 +115,7 @@ namespace TwitterMonitor
 						updatedSinceId = tweetId;
 
 					// TODO: format the email body nicer than this!
-					msgText += $"{createdAt.ToLocalTime().ToLongDateString()}  {createdAt.ToLocalTime().ToLongTimeString()}\\n{txt}\\n{urls}\\n\\n";
+					msgText += $"{createdAt.ToLocalTime().ToLongDateString()}  {createdAt.ToLocalTime().ToLongTimeString()}\n{txt}\n{urls}\n\n";
 
 				}
 			}
