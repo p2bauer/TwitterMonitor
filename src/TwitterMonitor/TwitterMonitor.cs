@@ -13,11 +13,11 @@ using System.Threading;
 using SendGrid.Helpers.Mail;
 using SendGrid;
 
-namespace TwitterMonitorRetweet
+namespace TwitterMonitor
 {
-	public static class TwitterMonitorRetweet
+	public static class TwitterMonitor
 	{
-		[FunctionName("TwitterMonitorRetweet")]
+		[FunctionName("TwitterMonitor")]
 		public static async Task Run([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Read)] Stream stateIn, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Write)] Stream stateOut,  
