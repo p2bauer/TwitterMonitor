@@ -21,8 +21,7 @@ namespace TwitterMonitor
 		// For testing every minute, can use "0 */1 * * * *"
 		// Normally every 5 minutes
 		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
-			[Blob("twitterjob1/twittercheckpoint", FileAccess.Read)] Stream stateIn, 
-			[Blob("twitterjob1/twittercheckpoint", FileAccess.Write)] Stream stateOut,  
+			[Blob("twitterjob1/twittercheckpoint", FileAccess.ReadWrite)] Stream stateBlob,  
 			TraceWriter log, 
 			CancellationToken cancellationToken = default(CancellationToken) 
 			//, [SendGrid] out Mail message <-- this doesn't seem to work properly with current nuget version, so do it manually!!!
@@ -57,9 +56,9 @@ namespace TwitterMonitor
 			// april 4 2018 (so that we're not asking for beginning of all time)
 			var previousTweetSinceId = 981588894067118080UL; 
 			
-			if (stateIn != null)
+			if (stateBlob != null)
 			{
-				using (var reader = new StreamReader(stateIn, Encoding.UTF8))
+				using (var reader = new StreamReader(stateBlob, Encoding.UTF8))
 				{
 					if (!ulong.TryParse(await reader.ReadToEndAsync(), out previousTweetSinceId))
 						throw new Exception("must parse");
@@ -124,7 +123,7 @@ namespace TwitterMonitor
 			
 			
 			// write state out and send notifications (latest sinceid)
-			if (stateOut != null && newTweetsCount > 0)
+			if (stateBlob != null && newTweetsCount > 0)
 			{
 				log.Info($"About to attempt to send message: {message}");
 			
@@ -134,14 +133,16 @@ namespace TwitterMonitor
 				if (resp.StatusCode != HttpStatusCode.Accepted)
 					log.Error($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
 				
-				using (var writer = new StreamWriter(stateOut, Encoding.UTF8))
+				using (var writer = new StreamWriter(stateBlob, Encoding.UTF8))
 				{
 					var updatedState = updatedSinceId.ToString();
 					await writer.WriteLineAsync(updatedState);
 					log.Info($"Wrote state (id of {updatedState}) out to azure storage.");
 				}
+
+				await stateBlob.FlushAsync();
 			}
-			else if (stateOut == null)
+			else if (stateBlob == null)
 				log.Error("Could not load output state container in azure storage.");
                 
 		}
