@@ -21,8 +21,8 @@ namespace TwitterMonitor
 		// For testing every minute, can use "0 */1 * * * *"
 		// Normally every 5 minutes
 		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
-			[Blob("twitterjob1/%BlobFileName%", FileAccess.Read)] Stream stateIn,   
-			[Blob("twitterjob1/%BlobFileName%", FileAccess.Write)] TextWriter stateOut, 
+			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn,   
+			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut, 
 			TraceWriter log, 
 			CancellationToken cancellationToken = default(CancellationToken) 
 			//, [SendGrid] out Mail message <-- this doesn't seem to work properly with current nuget version, so do it manually!!!
