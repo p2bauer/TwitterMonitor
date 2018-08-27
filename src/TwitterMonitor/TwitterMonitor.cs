@@ -20,7 +20,7 @@ namespace TwitterMonitor
 		[FunctionName("TwitterMonitor")]
 		// For testing every second, can use "0 */1 * * * *"
 		// Normally every 5 minutes
-		public static async Task Run([TimerTrigger("0 */5 * ? * *")]TimerInfo myTimer, 
+		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Read)] Stream stateIn, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Write)] Stream stateOut,  
 			TraceWriter log, 
