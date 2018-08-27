@@ -88,12 +88,22 @@ namespace TwitterMonitor
 				{
 					var txt = tweet.Text;
 					var tweetId = tweet.StatusID;
+					var createdAt = tweet.CreatedAt;
+
+					var urls = "";
+					if (tweet.Entities != null && tweet.Entities.UrlEntities != null)
+					{
+						foreach (var urlEntity in tweet.Entities.UrlEntities)
+						{
+							urls += urlEntity.ExpandedUrl + " ";
+						}
+					}
 					
 					if (tweetId > previousTweetSinceId)
 						updatedSinceId = tweetId;
 						
 					// TODO: format the email body nicer than this!
-					msgText += Environment.NewLine + txt;
+					msgText += $"{createdAt.ToLocalTime().ToLongDateString()}{createdAt.ToLocalTime().ToLongTimeString()}{Environment.NewLine}{txt}{Environment.NewLine}{urls}{Environment.NewLine}{Environment.NewLine}";
 				 	
 				});
 			}
