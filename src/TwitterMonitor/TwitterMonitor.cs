@@ -88,13 +88,15 @@ namespace TwitterMonitor
 
 			var msgText = "";
 			var updatedSinceId = previousTweetSinceId;
-			var statusCount = 0;
+			var newTweetsCount = 0;
 			if (searchResponse != null && searchResponse.Statuses != null)
 			{
-				statusCount = searchResponse.Statuses.Count;
-				log.Info($"Query has returned {statusCount} results.");
+				var newResponses = searchResponse.Statuses.Where(a => a.StatusID > previousTweetSinceId);
+			
+				newTweetsCount = newResponses.Count();
+				log.Info($"Query has returned {newTweetsCount} new results.");
 
-				searchResponse.Statuses.ForEach(tweet =>
+				foreach (var tweet in newResponses)
 				{
 					var txt = tweet.Text;
 					var tweetId = tweet.StatusID;
@@ -115,14 +117,14 @@ namespace TwitterMonitor
 					// TODO: format the email body nicer than this!
 					msgText += $"{createdAt.ToLocalTime().ToLongDateString()}{createdAt.ToLocalTime().ToLongTimeString()}{Environment.NewLine}{txt}{Environment.NewLine}{urls}{Environment.NewLine}{Environment.NewLine}";
 
-				});
+				}
 			}
 			else
 				log.Info("Query has returned no results.");
 			
 			
 			// write state out and send notifications (latest sinceid)
-			if (stateOut != null && statusCount > 0)
+			if (stateOut != null && newTweetsCount > 0)
 			{
 				log.Info($"About to attempt to send message: {message}");
 			
