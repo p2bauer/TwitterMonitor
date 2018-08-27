@@ -63,6 +63,8 @@ namespace TwitterMonitor
 			}
 			var twitterQuery = Environment.GetEnvironmentVariable("TwitterQuery", EnvironmentVariableTarget.Process);
 
+			log.Info($"Going to query for '{twitterQuery}' starting at SinceId {previousTweetSinceId}");
+
 			var twitterCtx = new TwitterContext(twitterAuth);
 			var searchResponse = (from search in twitterCtx.Search
 							  where search.Type == SearchType.Search &&
@@ -86,6 +88,8 @@ namespace TwitterMonitor
 			if (searchResponse != null && searchResponse.Statuses != null)
 			{
 				statusCount = searchResponse.Statuses.Count;
+				log.Info($"Query has returned {statusCount} results.");
+
 				searchResponse.Statuses.ForEach(tweet =>
 				{
 					var txt = tweet.Text;
@@ -100,36 +104,39 @@ namespace TwitterMonitor
 							urls += urlEntity.ExpandedUrl + " ";
 						}
 					}
-					
+
 					if (tweetId > updatedSinceId)
 						updatedSinceId = tweetId;
-						
+
 					// TODO: format the email body nicer than this!
 					msgText += $"{createdAt.ToLocalTime().ToLongDateString()}{createdAt.ToLocalTime().ToLongTimeString()}{Environment.NewLine}{txt}{Environment.NewLine}{urls}{Environment.NewLine}{Environment.NewLine}";
-				 	
+
 				});
 			}
+			else
+				log.Info("Query has returned no results.");
+			
 			
 			// write state out and send notifications (latest sinceid)
 			if (stateOut != null && statusCount > 0)
 			{
+				log.Info($"About to attempt to send message: {message}");
+			
 				message.AddContent("text/plain", msgText);
 				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
 				
 				if (resp.StatusCode != HttpStatusCode.Accepted)
-				{
-					// TODO: error message
-				}
+					log.Error($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
 				
 				using (var writer = new StreamWriter(stateOut, Encoding.UTF8))
 				{
-					await writer.WriteLineAsync(updatedSinceId.ToString());
+					var updatedState = updatedSinceId.ToString();
+					await writer.WriteLineAsync(updatedState);
+					log.Info($"Wrote state (id of {updatedState}) out to azure storage.");
 				}
 			}
-			else
-			{
-				// TODO: error message
-			}
+			else if (stateOut == null)
+				log.Error("Could not load output state container in azure storage.");
                 
 		}
 	}
