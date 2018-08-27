@@ -18,7 +18,9 @@ namespace TwitterMonitor
 	public static class TwitterMonitor
 	{
 		[FunctionName("TwitterMonitor")]
-		public static async Task Run([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, 
+		// For testing every second, can use "0 */1 * * * *"
+		// Normally every 5 minutes
+		public static async Task Run([TimerTrigger("0 */5 * ? * *")]TimerInfo myTimer, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Read)] Stream stateIn, 
 			[Blob("twitterjob1/twittercheckpoint", FileAccess.Write)] Stream stateOut,  
 			TraceWriter log, 
