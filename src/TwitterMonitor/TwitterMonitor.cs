@@ -23,9 +23,9 @@ namespace TwitterMonitor
 		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
 			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn,   
 			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut, 
+			[SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message, 
 			TraceWriter log, 
-			CancellationToken cancellationToken = default(CancellationToken) 
-			//, [SendGrid] out Mail message <-- this doesn't seem to work properly with current nuget version, so do it manually!!!
+			CancellationToken cancellationToken = default(CancellationToken)
 			)
 		{
 			if (myTimer == null) throw new Exception("Invalid timer trigger!");
@@ -79,12 +79,11 @@ namespace TwitterMonitor
 			// manually assemble
 			var sendGridClient = new SendGridClient(Environment.GetEnvironmentVariable("AzureWebJobsSendGridApiKey", EnvironmentVariableTarget.Process));
 
-			var message = new SendGridMessage
-			{
-				Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process),
-				From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process)),
-				Personalizations = new List<Personalization> { p }
-			};
+			message = new SendGridMessage();
+			message.Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process);
+			message.From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process));
+			message.Personalizations = new List<Personalization> { p };
+			
 
 			var msgText = "";
 			var updatedSinceId = previousTweetSinceId;
