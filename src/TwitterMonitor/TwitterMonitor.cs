@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Threading;
 using SendGrid.Helpers.Mail;
 using SendGrid;
+using Microsoft.Extensions.Logging;
 
 namespace TwitterMonitor
 {
@@ -24,13 +25,13 @@ namespace TwitterMonitor
 			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn,   
 			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut, 
 			[SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message, 
-			TraceWriter log, 
+			ILogger log, 
 			CancellationToken cancellationToken = default(CancellationToken)
 			)
 		{
 			if (myTimer == null) throw new Exception("Invalid timer trigger!");
 		
-			log.Info("Twitter Monitor function starting.");
+			log.LogInformation("Twitter Monitor function starting.");
 
 			var twitterAuth = new SingleUserAuthorizer
 			{
@@ -67,7 +68,7 @@ namespace TwitterMonitor
 			}
 			var twitterQuery = Environment.GetEnvironmentVariable("TwitterQuery", EnvironmentVariableTarget.Process);
 
-			log.Info($"Going to query for '{twitterQuery}' starting at SinceId {previousTweetSinceId}");
+			log.LogInformation($"Going to query for '{twitterQuery}' starting at SinceId {previousTweetSinceId}");
 
 			var twitterCtx = new TwitterContext(twitterAuth);
 			var searchResponse = (from search in twitterCtx.Search
@@ -93,7 +94,7 @@ namespace TwitterMonitor
 				var newResponses = searchResponse.Statuses.Where(a => a.StatusID > previousTweetSinceId);
 			
 				newTweetsCount = newResponses.Count();
-				log.Info($"Query has returned {newTweetsCount} new results.");
+				log.LogInformation($"Query has returned {newTweetsCount} new results.");
 
 				foreach (var tweet in newResponses)
 				{
@@ -119,19 +120,19 @@ namespace TwitterMonitor
 				}
 			}
 			else
-				log.Info("Query has returned no results.");
+				log.LogInformation("Query has returned no results.");
 			
 			
 			// write state out and send notifications (latest sinceid)
 			if (newTweetsCount > 0)
 			{
-				log.Info($"About to attempt to send message: {message}");
+				log.LogInformation($"About to attempt to send message: {message}");
 			
 				message.AddContent("text/plain", msgText);
 				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
 
 				if (resp.StatusCode != HttpStatusCode.Accepted)
-					log.Error($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
+					log.LogError($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
 			}
 			
 			var updatedState = updatedSinceId.ToString();
