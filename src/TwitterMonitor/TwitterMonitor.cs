@@ -1,34 +1,32 @@
-using System.Net;
-using System.Net.Http;
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using LinqToTwitter;
-using System.Linq;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
-using System.IO;
-using System.Text;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using SendGrid.Helpers.Mail;
-using SendGrid;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
-namespace TwitterMonitor
+namespace func1
 {
-	public static class TwitterMonitor
-	{
-		[FunctionName("TwitterMonitor")]
-		// For testing every minute, can use "0 */1 * * * *"
-		// Normally every 5 minutes
-		public static async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, 
-			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn,   
-			[Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut, 
-			[SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message, 
-			ILogger log, 
-			CancellationToken cancellationToken = default(CancellationToken)
+    public static class testfn
+    {
+        [FunctionName("testfn")]
+        public static async Task RunAsync(
+			[TimerTrigger("0 */1 * * * *")]TimerInfo myTimer
+			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn
+			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut
+// 			//, [SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message
+			, ILogger log
+			, CancellationToken cancellationToken = default(CancellationToken)
 			)
-		{
+        {
 			if (myTimer == null) throw new Exception("Invalid timer trigger!");
 		
 			log.LogInformation("Twitter Monitor function starting.");
@@ -36,12 +34,12 @@ namespace TwitterMonitor
 			var twitterAuth = new SingleUserAuthorizer
 			{
 				CredentialStore = new SingleUserInMemoryCredentialStore
-		        {
-		            ConsumerKey = Environment.GetEnvironmentVariable("TwitterApiConsumerKey", EnvironmentVariableTarget.Process), 
-		            ConsumerSecret = Environment.GetEnvironmentVariable("TwitterApiConsumerSecret", EnvironmentVariableTarget.Process), 
-		            AccessToken = Environment.GetEnvironmentVariable("TwitterApiAccessToken", EnvironmentVariableTarget.Process), 
-		            AccessTokenSecret = Environment.GetEnvironmentVariable("TwitterApiTokenSecret", EnvironmentVariableTarget.Process)
-		        }
+		       {
+		           ConsumerKey = Environment.GetEnvironmentVariable("TwitterApiConsumerKey", EnvironmentVariableTarget.Process), 
+		           ConsumerSecret = Environment.GetEnvironmentVariable("TwitterApiConsumerSecret", EnvironmentVariableTarget.Process), 
+		           AccessToken = Environment.GetEnvironmentVariable("TwitterApiAccessToken", EnvironmentVariableTarget.Process), 
+		           AccessTokenSecret = Environment.GetEnvironmentVariable("TwitterApiTokenSecret", EnvironmentVariableTarget.Process)
+		       }
 			};
 
 			var p = new Personalization
@@ -80,7 +78,7 @@ namespace TwitterMonitor
 			// manually assemble
 			var sendGridClient = new SendGridClient(Environment.GetEnvironmentVariable("AzureWebJobsSendGridApiKey", EnvironmentVariableTarget.Process));
 
-			message = new SendGridMessage();
+			var message = new SendGridMessage();
 			message.Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process);
 			message.From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process));
 			message.Personalizations = new List<Personalization> { p };
@@ -129,7 +127,7 @@ namespace TwitterMonitor
 				log.LogInformation($"About to attempt to send message: {message}");
 			
 				message.AddContent("text/plain", msgText);
-				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
+				var resp = await sendGridClient.SendEmailAsync(message, CancellationToken.None);
 
 				if (resp.StatusCode != HttpStatusCode.Accepted)
 					log.LogError($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
@@ -138,6 +136,6 @@ namespace TwitterMonitor
 			var updatedState = updatedSinceId.ToString();
 			await stateOut.WriteLineAsync( updatedState);
                 
-		}
-	}
+        }
+    }
 }

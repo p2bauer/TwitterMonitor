@@ -1,24 +1,2 @@
 ﻿{
-  "bindings": [
-    {
-      "name": "message",
-      "type": "sendGrid",
-      "direction": "out",
-      "to": "{ToEmail}",
-      "from": "{FromEmail}",
-      "subject": "SendGrid output bindings"
-    },
-    {
-      "name": "stateIn",
-      "type": "blob",
-      "direction": "in",
-      "connection": "AzureWebJobsStorage"
-    },
-    {
-      "name": "stateOut",
-      "type": "blob",
-      "direction": "out",
-      "connection": "AzureWebJobsStorage"
-    }
-  ]
 }
