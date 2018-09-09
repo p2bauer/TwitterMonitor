@@ -19,7 +19,7 @@ namespace TwitterMonitor
     {
         [FunctionName("TwitterMonitor")]
         public static async Task RunAsync(
-			[TimerTrigger("0 */1 * * * *")]TimerInfo myTimer
+			[TimerTrigger("0 */5 * * * *")]TimerInfo myTimer
 			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn
 			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut
 // 			//, [SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message
