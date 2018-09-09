@@ -13,11 +13,11 @@ using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 using System.Net;
 
-namespace func1
+namespace TwitterMonitor
 {
-    public static class testfn
+    public static class TwitterMonitor
     {
-        [FunctionName("testfn")]
+        [FunctionName("TwitterMonitor")]
         public static async Task RunAsync(
 			[TimerTrigger("0 */1 * * * *")]TimerInfo myTimer
 			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn
