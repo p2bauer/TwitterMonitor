@@ -75,15 +75,14 @@ namespace TwitterMonitor
 			// manually assemble
 			var sendGridClient = new SendGridClient(Environment.GetEnvironmentVariable("AzureWebJobsSendGridApiKey", EnvironmentVariableTarget.Process));
 
-            var message = new SendGridMessage
-            {
-                Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process),
-                From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process)),
-                Personalizations = new List<Personalization> { p }
-            };
+			var message = new SendGridMessage
+			{
+				Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process),
+				From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process)),
+				Personalizations = new List<Personalization> { p }
+			};
 
-
-            var msgText = "";
+			var msgText = "";
 			var updatedSinceId = previousTweetSinceId;
 			var newTweetsCount = 0;
 			if (searchResponse != null && searchResponse.Statuses != null)
