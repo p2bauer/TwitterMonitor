@@ -9,9 +9,9 @@ using LinqToTwitter;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using LinqToTwitter.OAuth;
 
 namespace TwitterMonitor
 {
@@ -24,7 +24,7 @@ namespace TwitterMonitor
 			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut
 // 			//, [SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message
 			, ILogger log
-			, CancellationToken cancellationToken = default(CancellationToken)
+			, CancellationToken cancellationToken = default
 			)
         {
 			if (myTimer == null) throw new Exception("Invalid timer trigger!");
@@ -54,16 +54,14 @@ namespace TwitterMonitor
 				p.Tos.Add(new EmailAddress(secondaryEmail));
 
 			// april 4 2018 (so that we're not asking for beginning of all time)
-			var previousTweetSinceId = 981588894067118080UL; 
-			
-			if (stateIn != null)
-			{
-				using (var reader = new StreamReader(stateIn, Encoding.UTF8))
-				{
-					if (!ulong.TryParse(await reader.ReadToEndAsync(), out previousTweetSinceId))
-						throw new Exception("must parse");
-				}
-			}
+			var previousTweetSinceId = 981588894067118080UL;
+
+            if (stateIn != null)
+            {
+                using var reader = new StreamReader(stateIn, Encoding.UTF8);
+                if (!ulong.TryParse(await reader.ReadToEndAsync(), out previousTweetSinceId))
+                    throw new Exception("must parse");
+            }
 			var twitterQuery = Environment.GetEnvironmentVariable("TwitterQuery", EnvironmentVariableTarget.Process);
 
 			log.LogInformation($"Going to query for '{twitterQuery}' starting at SinceId {previousTweetSinceId}");
@@ -78,13 +76,15 @@ namespace TwitterMonitor
 			// manually assemble
 			var sendGridClient = new SendGridClient(Environment.GetEnvironmentVariable("AzureWebJobsSendGridApiKey", EnvironmentVariableTarget.Process));
 
-			var message = new SendGridMessage();
-			message.Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process);
-			message.From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process));
-			message.Personalizations = new List<Personalization> { p };
-			
+            var message = new SendGridMessage
+            {
+                Subject = Environment.GetEnvironmentVariable("EmailSubject", EnvironmentVariableTarget.Process),
+                From = new EmailAddress(Environment.GetEnvironmentVariable("FromEmail", EnvironmentVariableTarget.Process)),
+                Personalizations = new List<Personalization> { p }
+            };
 
-			var msgText = "";
+
+            var msgText = "";
 			var updatedSinceId = previousTweetSinceId;
 			var newTweetsCount = 0;
 			if (searchResponse != null && searchResponse.Statuses != null)
@@ -127,7 +127,7 @@ namespace TwitterMonitor
 				log.LogInformation($"About to attempt to send message: {message}");
 			
 				message.AddContent("text/plain", msgText);
-				var resp = await sendGridClient.SendEmailAsync(message, CancellationToken.None);
+				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
 
 				if (resp.StatusCode != HttpStatusCode.Accepted)
 					log.LogError($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
