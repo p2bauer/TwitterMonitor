@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LinqToTwitter;
-using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
@@ -21,7 +20,7 @@ namespace TwitterMonitor
 			[TimerTrigger("0 */5 * * * *")]TimerInfo myTimer
 			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Read)] Stream stateIn
 			, [Blob("%BlobContainerName%/%BlobFileName%", FileAccess.Write)] TextWriter stateOut
-// 			//, [SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] SendGridMessage message
+			, [SendGrid(ApiKey = "%AzureWebJobsSendGridApiKey%")] IAsyncCollector<SendGridMessage> messageCollector
 			, ILogger log
 			, CancellationToken cancellationToken = default
 			)
@@ -73,7 +72,7 @@ namespace TwitterMonitor
 							  select search).SingleOrDefault();
 
 			// manually assemble
-			var sendGridClient = new SendGridClient(Environment.GetEnvironmentVariable("AzureWebJobsSendGridApiKey", EnvironmentVariableTarget.Process));
+			//var sendGridClient = new SendGridClient(Environment.GetEnvironmentVariable("AzureWebJobsSendGridApiKey", EnvironmentVariableTarget.Process));
 
 			var message = new SendGridMessage
 			{
@@ -125,15 +124,17 @@ namespace TwitterMonitor
 				log.LogInformation($"About to attempt to send message: {message}");
 			
 				message.AddContent("text/plain", msgText);
-				var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
 
-				if (resp.StatusCode != HttpStatusCode.Accepted)
-					log.LogError($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
+				await messageCollector.AddAsync(message, cancellationToken);
+
+				// var resp = await sendGridClient.SendEmailAsync(message, cancellationToken);
+
+				// if (resp.StatusCode != HttpStatusCode.Accepted)
+				// 	log.LogError($"Sendgrid send email failed with status code {(int)resp.StatusCode}");
 			}
 			
 			var updatedState = updatedSinceId.ToString();
 			await stateOut.WriteLineAsync( updatedState);
-                
         }
     }
 }
