@@ -55,12 +55,12 @@ namespace TwitterMonitor
 			// april 4 2018 (so that we're not asking for beginning of all time)
 			var previousTweetSinceId = 981588894067118080UL;
 
-            if (stateIn != null)
-            {
-                using var reader = new StreamReader(stateIn, Encoding.UTF8);
-                if (!ulong.TryParse(await reader.ReadToEndAsync(), out previousTweetSinceId))
-                    throw new Exception("must parse");
-            }
+			if (stateIn != null)
+			{
+				using var reader = new StreamReader(stateIn, Encoding.UTF8);
+				if (!ulong.TryParse(await reader.ReadToEndAsync(), out previousTweetSinceId))
+					throw new Exception("must parse");
+			}
 			var twitterQuery = Environment.GetEnvironmentVariable("TwitterQuery", EnvironmentVariableTarget.Process);
 
 			log.LogInformation($"Going to query for '{twitterQuery}' starting at SinceId {previousTweetSinceId}");
