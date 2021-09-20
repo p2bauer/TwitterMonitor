@@ -11,7 +11,6 @@ using SendGrid.Helpers.Mail;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System.Net;
-using LinqToTwitter.OAuth;
 
 namespace TwitterMonitor
 {
